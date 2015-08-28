@@ -44,7 +44,7 @@ export default {
     /* recursive function which renders individual */
     /* lines and handles timing of screen updates. */
     if (y_index < this.canvas.height) {
-      for(var i = 0; i < 50; i++) {
+      while(performance.now() - timestamp < 17) {
         if (y_index < this.canvas.height) {
           this.renderRow(dx, dy, topLeft, imageData, y_index);
           y_index++;
