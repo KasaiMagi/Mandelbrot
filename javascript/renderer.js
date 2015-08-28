@@ -19,13 +19,13 @@ export default {
     if (!locationHash) { locationHash = Tools.parseLocationHash(locationHash); }
 
     var self = this;
-    
+
     CONFIG = Config.getConfig(locationHash);
 
     self.viewport = Viewport({
       bounds: {
         x: {min: CONFIG.x_min, max: CONFIG.x_max},
-        y: {min: CONFIG.y_min, max: CONFIG.y_max} 
+        y: {min: CONFIG.y_min, max: CONFIG.y_max}
       },
       width: self.canvas.width,
       height: self.canvas.height
@@ -36,46 +36,25 @@ export default {
     var dy = self.viewport.delta().y;
 
     var imageData = new ImageData(self.canvas.width, 1);
-    var lastUpdate = (new Date()).getTime();
     var topLeft = self.viewport.topLeft();
 
-    Config.activelyRendering = true;
-    console.time('render timer');
-
-    new Promise(function (resolve) {
-      self.renderRows(dx, dy, topLeft, lastUpdate, imageData, 0, resolve)
-    }).then(function () {
-      Config.activelyRendering = false;
-      console.timeEnd('render timer');
-    });
+    window.requestAnimationFrame(self.renderRows.bind(self, dx, dy, topLeft, imageData, 0));
   },
-  renderRows: function (dx, dy, topLeft, lastUpdate, imageData, y_index, resolve) {   
+  renderRows: function (dx, dy, topLeft, imageData, y_index, timestamp) {
     /* recursive function which renders individual */
     /* lines and handles timing of screen updates. */
-    var self = this;
-
-    if (y_index < self.canvas.height) {
-      self.renderRow(dx, dy, topLeft, lastUpdate, imageData, y_index);
-
-      var now = (new Date()).getTime();
-      var timeSinceLastUpdate = now - lastUpdate;
-
-      /* thanks to cslarsen */
-      /* https://github.com/cslarsen/mandelbrot-js */
-      if (timeSinceLastUpdate >= 1000.0 / CONFIG.render_fps) {
-        lastUpdate = now;
-        setTimeout(function () {
-          self.renderRows(dx, dy, topLeft, lastUpdate, imageData, ++y_index, resolve);
-        }, 0);
-      } else {
-        self.renderRows(dx, dy, topLeft, lastUpdate, imageData, ++y_index, resolve);
+    if (y_index < this.canvas.height) {
+      for(var i = 0; i < 50; i++) {
+        if (y_index < this.canvas.height) {
+          this.renderRow(dx, dy, topLeft, imageData, y_index);
+          y_index++;
+        }
       }
 
-    } else {
-      resolve();
+      window.requestAnimationFrame(this.renderRows.bind(this, dx, dy, topLeft, imageData, y_index));
     }
   },
-  renderRow: function (dx, dy, topLeft, lastUpdate, imageData, y_index) {
+  renderRow: function (dx, dy, topLeft, imageData, y_index) {
     var ITERATIONS = CONFIG.iterations;
     var SUPER_SAMPLES = CONFIG.super_samples;
 
